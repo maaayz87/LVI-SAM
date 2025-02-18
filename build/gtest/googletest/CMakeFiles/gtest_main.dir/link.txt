@@ -1,0 +1,1 @@
+/usr/bin/g++ -fPIC -std=c++14 -O3 -Wall -g -pthread -shared -Wl,-soname,libgtest_main.so -o ../lib/libgtest_main.so CMakeFiles/gtest_main.dir/src/gtest_main.cc.o  -Wl,-rpath,/home/myz/catkin_ws_lvi2.0/src/LVI-SAM-Easyused2.0/build/gtest/lib ../lib/libgtest.so -lpthread 

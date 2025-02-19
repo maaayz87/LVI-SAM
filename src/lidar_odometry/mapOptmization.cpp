@@ -43,6 +43,16 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIRPYT,
 
 typedef PointXYZIRPYT PointTypePose;
 
+
+float roundIntensity(float intensity) {
+    if (intensity < 0.3) return 0.2;
+    if (intensity < 0.5) return 0.4;
+    if (intensity < 0.7) return 0.6;
+    if (intensity < 0.9) return 0.8;
+    return 1.0;
+}
+
+
 class mapOptimization : public ParamServer
 {
 
@@ -381,7 +391,7 @@ public:
         string saveMapDirectory;
 
         cout << "****************************************************" << endl;
-        cout << "Saving vimap to pcd files ..." << endl;
+        cout << "Saving vimap to pcd files, pocessing from lidar odom..." << endl;
 
         saveMapDirectory = std::getenv("HOME") + saveViPCDDirectory;
         cout << "Save destination: " << saveMapDirectory << endl;
@@ -429,7 +439,7 @@ public:
         string saveMapDirectory;
 
         cout << "****************************************************" << endl;
-        cout << "Saving map to pcd files ..." << endl;
+        cout << "Saving map to pcd files, pocessing from lidar odom..." << endl;
         if (req.destination.empty())
             saveMapDirectory = std::getenv("HOME") + savePCDDirectory;
         else
@@ -450,17 +460,56 @@ public:
         pcl::PointCloud<PointType>::Ptr globalSurfCloud(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr globalSurfCloudDS(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr globalMapCloud(new pcl::PointCloud<PointType>());
+        //myz
+        pcl::PointCloud<PointType>::Ptr filterDynamicCloud_corner(new pcl::PointCloud<PointType>());
+        pcl::PointCloud<PointType>::Ptr filterDynamicCloud_surf(new pcl::PointCloud<PointType>());
+        std::map<float, int> intensityFrequency;
+
+
         for (int i = 0; i < (int)cloudKeyPoses3D->size(); i++)
         {
-            pcl::PointCloud<PointType>::Ptr transformedCloud = transformPointCloud(cornerCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
-            for (size_t i = 0; i < transformedCloud->size(); ++i) {
-                const auto& point = transformedCloud->points[i];  // 获取当前点
-                std::cout << "Intensity of point " << i << ": " << point.intensity << std::endl;
+            filterDynamicCloud_corner->clear();
+            filterDynamicCloud_surf->clear();
+            //myz 0.2-1
+            pcl::PointCloud<PointType>::Ptr tempCloud1 = cornerCloudKeyFrames[i];
+            for (size_t j = 0; j < tempCloud1->size(); ++j) {
+                auto& point = tempCloud1->points[j];
+                point.intensity = roundIntensity(point.intensity);
+                intensityFrequency[point.intensity]++;
+                //if (point.intensity == 0 || point.intensity == 0.2 || point.intensity == 0.4 || point.intensity == 0.6 || point.intensity == 0.8 || point.intensity == 1.0) {
+                //if (point.intensity != 0 && point.intensity != 0.2 && point.intensity != 0.4 && point.intensity != 0.6 && point.intensity != 0.8 && point.intensity != 1.0) {
+                if (std::abs(point.intensity - 0.2f) < 1e-6){
+                    filterDynamicCloud_corner->points.push_back(point);
+                }
+            }
+            cout << "corner size: " << filterDynamicCloud_corner->points.size() << endl;
+
+            pcl::PointCloud<PointType>::Ptr tempCloud2 = surfCloudKeyFrames[i];
+            for (size_t j = 0; j < tempCloud2->size(); ++j) {
+                auto& point = tempCloud2->points[j];
+                point.intensity = roundIntensity(point.intensity);
+                intensityFrequency[point.intensity]++;
+                //if (point.intensity == 0 || point.intensity == 0.2 || point.intensity == 0.4 || point.intensity == 0.6 || point.intensity == 0.8 || point.intensity == 1.0) {
+                //if (point.intensity != 0 && point.intensity != 0.2 && point.intensity != 0.4 && point.intensity != 0.6 && point.intensity != 0.8 && point.intensity != 1.0) {
+                if (std::abs(point.intensity - 0.2f) < 1e-6){
+                    filterDynamicCloud_surf->points.push_back(point);
+                }
+            }
+            cout << "surf size: " << filterDynamicCloud_surf->points.size() << endl;
+            std::cout << "\nIntensity frequency: \n";
+            for (const auto& entry : intensityFrequency) {
+                std::cout << "Intensity: " << entry.first << ", Frequency: " << entry.second << std::endl;
             }
 
-            *globalCornerCloud += *transformPointCloud(cornerCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
-            *globalSurfCloud += *transformPointCloud(surfCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
-            cout << "\r" << std::flush << "Processing feature cloud " << i << " of " << cloudKeyPoses6D->size() << " ...";
+            *globalCornerCloud += *transformPointCloud(filterDynamicCloud_corner, &cloudKeyPoses6D->points[i]);
+            *globalSurfCloud += *transformPointCloud(filterDynamicCloud_surf, &cloudKeyPoses6D->points[i]);
+
+            cout << "globalCornerCloud size: " << globalCornerCloud->points.size() << endl;
+            cout << "globalSurfCloud size: " << globalSurfCloud->points.size() << endl;
+            // *globalCornerCloud += *transformPointCloud(cornerCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
+            // *globalSurfCloud += *transformPointCloud(surfCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
+            cout << "\r" << std::flush << "Processing feature cloud " << i << " of " << cloudKeyPoses6D->size()<< " ...";
+            
         }
 
         if (req.resolution != 0)
@@ -480,6 +529,7 @@ public:
         }
         else
         {
+            cout << "saving corner and surf..." << endl;
             // save corner cloud
             pcl::io::savePCDFileBinary(saveMapDirectory + "/CornerMap.pcd", *globalCornerCloud);
             // save surf cloud
@@ -490,6 +540,7 @@ public:
         *globalMapCloud += *globalCornerCloud;
         *globalMapCloud += *globalSurfCloud;
 
+        cout << "saving global..." << endl;
         int ret = pcl::io::savePCDFileBinary(saveMapDirectory + "/GlobalMap.pcd", *globalMapCloud);
         res.success = ret == 0;
 

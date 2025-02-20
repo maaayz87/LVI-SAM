@@ -16,8 +16,8 @@ lvi_sam:
   mapFrame: "map"
 
   # GPS Settings
-  useImuHeadingInitialization: true           # if using GPS data, set to "true"
-  useGpsElevation: true                      # if GPS elevation is bad, set to "false"
+  useImuHeadingInitialization: false #true           # if using GPS data, set to "true"
+  useGpsElevation: false #true                      # if GPS elevation is bad, set to "false"
   gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
   poseCovThreshold: 25.0                      # m^2, threshold for using GPS data
 
@@ -68,17 +68,17 @@ lvi_sam:
   surfFeatureMinValidNum: 100
 
   # voxel filter paprams
-  odometrySurfLeafSize: 0.4                     # default: 0.4
-  mappingCornerLeafSize: 0.2                    # default: 0.2
-  mappingSurfLeafSize: 0.4                      # default: 0.4
+  odometrySurfLeafSize: 0.2                     # default: 0.4
+  mappingCornerLeafSize: 0.1                    # default: 0.2
+  mappingSurfLeafSize: 0.2                      # default: 0.4
 
   # robot motion constraint (in case you are using a 2D robot)
   z_tollerance: 1000        # meters
   rotation_tollerance: 1000 # radians
 
   # CPU Params
-  numberOfCores: 10                              # number of cores for mapping optimization
-  mappingProcessInterval: 0.15                  # seconds, regulate mapping frequency
+  numberOfCores: 12                              # number of cores for mapping optimization
+  mappingProcessInterval: 0.15 #0.15                  # seconds, regulate mapping frequency
 
   # Surrounding map
   surroundingkeyframeAddingDistThreshold: 1.0   # meters, regulate keyframe adding threshold

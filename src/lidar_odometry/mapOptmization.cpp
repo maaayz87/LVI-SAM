@@ -474,11 +474,11 @@ public:
             pcl::PointCloud<PointType>::Ptr tempCloud1 = cornerCloudKeyFrames[i];
             for (size_t j = 0; j < tempCloud1->size(); ++j) {
                 auto& point = tempCloud1->points[j];
-                point.intensity = roundIntensity(point.intensity);
+                //point.intensity = roundIntensity(point.intensity);
                 intensityFrequency[point.intensity]++;
-                //if (point.intensity == 0 || point.intensity == 0.2 || point.intensity == 0.4 || point.intensity == 0.6 || point.intensity == 0.8 || point.intensity == 1.0) {
-                //if (point.intensity != 0 && point.intensity != 0.2 && point.intensity != 0.4 && point.intensity != 0.6 && point.intensity != 0.8 && point.intensity != 1.0) {
-                if (std::abs(point.intensity - 0.2f) < 1e-6){
+                //滤除动态物体
+                //if (std::abs(point.intensity - 0.2f) > 1e-5){
+                if (point.intensity >= 0.4f){
                     filterDynamicCloud_corner->points.push_back(point);
                 }
             }
@@ -487,11 +487,11 @@ public:
             pcl::PointCloud<PointType>::Ptr tempCloud2 = surfCloudKeyFrames[i];
             for (size_t j = 0; j < tempCloud2->size(); ++j) {
                 auto& point = tempCloud2->points[j];
-                point.intensity = roundIntensity(point.intensity);
+                //point.intensity = roundIntensity(point.intensity);
                 intensityFrequency[point.intensity]++;
-                //if (point.intensity == 0 || point.intensity == 0.2 || point.intensity == 0.4 || point.intensity == 0.6 || point.intensity == 0.8 || point.intensity == 1.0) {
-                //if (point.intensity != 0 && point.intensity != 0.2 && point.intensity != 0.4 && point.intensity != 0.6 && point.intensity != 0.8 && point.intensity != 1.0) {
-                if (std::abs(point.intensity - 0.2f) < 1e-6){
+                //滤除动态物体
+                //if (std::abs(point.intensity - 0.2f) > 1e-5){
+                if (point.intensity >= 0.4f){
                     filterDynamicCloud_surf->points.push_back(point);
                 }
             }

@@ -183,6 +183,7 @@ public:
         nh.param<std::string>("/robot_id", robot_id, "roboat");
 
         nh.param<std::string>(PROJECT_NAME + "/pointCloudTopic", pointCloudTopic, "label_pointcloud");  //XYZIRT points_raw
+        nh.param<std::string>(PROJECT_NAME + "/pointCloudTopic_RGB", pointCloudTopic_RGB, "label_pointcloud_RGB");  //XYZIRT points_raw
         nh.param<std::string>(PROJECT_NAME + "/imuTopic", imuTopic, "imu_correct");
         nh.param<std::string>(PROJECT_NAME + "/odomTopic", odomTopic, "odometry/imu");
         nh.param<std::string>(PROJECT_NAME + "/gpsTopic", gpsTopic, "odometry/gps");

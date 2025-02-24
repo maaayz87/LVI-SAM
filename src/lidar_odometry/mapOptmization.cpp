@@ -96,6 +96,7 @@ public:
 
     vector<pcl::PointCloud<PointType>::Ptr> cornerCloudKeyFrames;
     vector<pcl::PointCloud<PointType>::Ptr> surfCloudKeyFrames;
+    vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> RGBCloudKeyFrames;//2.24
     
     pcl::PointCloud<PointType>::Ptr cloudKeyPoses3D;
     pcl::PointCloud<PointTypePose>::Ptr cloudKeyPoses6D;
@@ -108,6 +109,10 @@ public:
     pcl::PointCloud<PointType>::Ptr laserCloudSurfLast; // surf feature set from odoOptimization
     pcl::PointCloud<PointType>::Ptr laserCloudCornerLastDS; // downsampled corner feature set from odoOptimization
     pcl::PointCloud<PointType>::Ptr laserCloudSurfLastDS; // downsampled surf feature set from odoOptimization
+
+    //2.24myz
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr laserCloudRGBLast;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr laserCloudRGBLastDS;
 
     pcl::PointCloud<PointType>::Ptr laserCloudOri;
     pcl::PointCloud<PointType>::Ptr coeffSel;
@@ -235,6 +240,10 @@ public:
         laserCloudCornerLastDS.reset(new pcl::PointCloud<PointType>()); // downsampled corner featuer set from odoOptimization
         laserCloudSurfLastDS.reset(new pcl::PointCloud<PointType>());   // downsampled surf featuer set from odoOptimization
 
+        //2.24myz
+        laserCloudRGBLast.reset(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+        laserCloudRGBLastDS.reset(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+
         laserCloudOri.reset(new pcl::PointCloud<PointType>());
         coeffSel.reset(new pcl::PointCloud<PointType>());
 
@@ -278,8 +287,12 @@ public:
 
         // extract info and feature cloud
         cloudInfo = *msgIn;
+        //关键读取 2.24myz
         pcl::fromROSMsg(msgIn->cloud_corner, *laserCloudCornerLast);
         pcl::fromROSMsg(msgIn->cloud_surface, *laserCloudSurfLast);
+        std::cout << "made a " << std::endl;
+        pcl::fromROSMsg(msgIn->cloud_RGB, *laserCloudRGBLast);
+        std::cout << "wish " << std::endl;
 
         std::lock_guard<std::mutex> lock(mtx);
 
@@ -1820,7 +1833,7 @@ public:
         transformTobeMapped[4] = latestEstimate.translation().y();
         transformTobeMapped[5] = latestEstimate.translation().z();
 
-        // save all the received edge and surf points
+        // save all the received edge and surf points 2.24
         pcl::PointCloud<PointType>::Ptr thisCornerKeyFrame(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr thisSurfKeyFrame(new pcl::PointCloud<PointType>());
         pcl::copyPointCloud(*laserCloudCornerLastDS, *thisCornerKeyFrame);
@@ -1829,10 +1842,15 @@ public:
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr thisViCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
         pcl::copyPointCloud(*viCloudLast, *thisViCloud);
 
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr thisRGBKeyFrame(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::copyPointCloud(*laserCloudRGBLastDS, *thisRGBKeyFrame);
+
+
         // save key frame cloud
         cornerCloudKeyFrames.push_back(thisCornerKeyFrame);
         surfCloudKeyFrames.push_back(thisSurfKeyFrame);
         viCloudKeyFrames.push_back(thisViCloud);
+        RGBCloudKeyFrames.push_back(thisRGBKeyFrame);
         //cout << "currentCloud size: " << viCloudKeyFrames[viCloudKeyFrames.size()-1]->size() << endl;
 
         // save path for visualization

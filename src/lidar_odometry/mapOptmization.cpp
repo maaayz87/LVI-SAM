@@ -133,11 +133,17 @@ public:
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurroundingKeyPoses;
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeHistoryKeyPoses;
 
-    pcl::VoxelGrid<PointType> downSizeFilterCorner;
-    pcl::VoxelGrid<PointType> downSizeFilterSurf;
-    pcl::VoxelGrid<PointType> downSizeFilterICP;
-    pcl::VoxelGrid<PointType> downSizeFilterSurroundingKeyPoses; // for surrounding key poses of scan-to-map optimization
+    // pcl::VoxelGrid<PointType> downSizeFilterCorner;
+    // pcl::VoxelGrid<PointType> downSizeFilterSurf;
+    // pcl::VoxelGrid<PointType> downSizeFilterICP;
+    // pcl::VoxelGrid<PointType> downSizeFilterSurroundingKeyPoses; // for surrounding key poses of scan-to-map optimization
     
+    //2.20 myz
+    pcl::UniformSampling<PointType> downSizeFilterCorner;
+    pcl::UniformSampling<PointType> downSizeFilterSurf;
+    pcl::UniformSampling<PointType> downSizeFilterICP;
+    pcl::UniformSampling<PointType> downSizeFilterSurroundingKeyPoses;
+
     ros::Time timeLaserInfoStamp;
     double timeLaserInfoCur;
 
@@ -183,6 +189,7 @@ public:
         pubLaserOdometryIncremental = nh.advertise<nav_msgs::Odometry>(PROJECT_NAME + "/lidar/mapping/odometry_incremental", 1);
         pubPath = nh.advertise<nav_msgs::Path>(PROJECT_NAME + "/lidar/mapping/path", 1);
 
+        //来自featureExtraction
         subCloud = nh.subscribe<lvi_sam::cloud_info>(PROJECT_NAME + "/lidar/feature/cloud_info", 5, &mapOptimization::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
         subGPS = nh.subscribe<nav_msgs::Odometry>(gpsTopic, 50, &mapOptimization::gpsHandler, this, ros::TransportHints().tcpNoDelay());
         subLoop = nh.subscribe<std_msgs::Float64MultiArray>(PROJECT_NAME + "/vins/loop/match_frame", 5, &mapOptimization::loopInfoHandler, this, ros::TransportHints().tcpNoDelay());
@@ -198,10 +205,15 @@ public:
 
         pubSLAMInfo = nh.advertise<lvi_sam::cloud_info>(PROJECT_NAME + "/lidar/mapping/slam_info", 1);
 
-        downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
-        downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
-        downSizeFilterICP.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
-        downSizeFilterSurroundingKeyPoses.setLeafSize(surroundingKeyframeDensity, surroundingKeyframeDensity, surroundingKeyframeDensity); // for surrounding key poses of scan-to-map optimization
+        //downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
+        //downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
+        //downSizeFilterICP.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
+        //downSizeFilterSurroundingKeyPoses.setLeafSize(surroundingKeyframeDensity, surroundingKeyframeDensity, surroundingKeyframeDensity); // for surrounding key poses of scan-to-map optimization
+
+        downSizeFilterCorner.setRadiusSearch(mappingCornerLeafSize);
+        downSizeFilterSurf.setRadiusSearch(mappingSurfLeafSize);
+        downSizeFilterICP.setRadiusSearch(mappingSurfLeafSize);
+        downSizeFilterSurroundingKeyPoses.setRadiusSearch(surroundingKeyframeDensity);
 
         allocateMemory();
     }
@@ -516,16 +528,16 @@ public:
         {
             cout << "\n\nSave resolution: " << req.resolution << endl;
 
-            // down-sample and save corner cloud
-            downSizeFilterCorner.setInputCloud(globalCornerCloud);
-            downSizeFilterCorner.setLeafSize(req.resolution, req.resolution, req.resolution);
-            downSizeFilterCorner.filter(*globalCornerCloudDS);
-            pcl::io::savePCDFileBinary(saveMapDirectory + "/CornerMap.pcd", *globalCornerCloudDS);
-            // down-sample and save surf cloud
-            downSizeFilterSurf.setInputCloud(globalSurfCloud);
-            downSizeFilterSurf.setLeafSize(req.resolution, req.resolution, req.resolution);
-            downSizeFilterSurf.filter(*globalSurfCloudDS);
-            pcl::io::savePCDFileBinary(saveMapDirectory + "/SurfMap.pcd", *globalSurfCloudDS);
+            // // down-sample and save corner cloud
+            // downSizeFilterCorner.setInputCloud(globalCornerCloud);
+            // downSizeFilterCorner.setLeafSize(req.resolution, req.resolution, req.resolution);
+            // downSizeFilterCorner.filter(*globalCornerCloudDS);
+            // pcl::io::savePCDFileBinary(saveMapDirectory + "/CornerMap.pcd", *globalCornerCloudDS);
+            // // down-sample and save surf cloud
+            // downSizeFilterSurf.setInputCloud(globalSurfCloud);
+            // downSizeFilterSurf.setLeafSize(req.resolution, req.resolution, req.resolution);
+            // downSizeFilterSurf.filter(*globalSurfCloudDS);
+            // pcl::io::savePCDFileBinary(saveMapDirectory + "/SurfMap.pcd", *globalSurfCloudDS);
         }
         else
         {
@@ -544,8 +556,11 @@ public:
         int ret = pcl::io::savePCDFileBinary(saveMapDirectory + "/GlobalMap.pcd", *globalMapCloud);
         res.success = ret == 0;
 
-        downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
-        downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
+        // downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
+        // downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
+        downSizeFilterCorner.setRadiusSearch(mappingCornerLeafSize);
+        downSizeFilterSurf.setRadiusSearch(mappingSurfLeafSize);
+
 
 	    cout << "****************************************************" << endl;
 	    cout << "Saving map to pcd files completed\n" << endl;
@@ -604,8 +619,12 @@ public:
         for (int i = 0; i < (int)pointSearchIndGlobalMap.size(); ++i)
             globalMapKeyPoses->push_back(cloudKeyPoses3D->points[pointSearchIndGlobalMap[i]]);
         // downsample near selected key frames
-        pcl::VoxelGrid<PointType> downSizeFilterGlobalMapKeyPoses; // for global map visualization
-        downSizeFilterGlobalMapKeyPoses.setLeafSize(globalMapVisualizationPoseDensity, globalMapVisualizationPoseDensity, globalMapVisualizationPoseDensity); // for global map visualization
+        // pcl::VoxelGrid<PointType> downSizeFilterGlobalMapKeyPoses; // for global map visualization
+        // downSizeFilterGlobalMapKeyPoses.setLeafSize(globalMapVisualizationPoseDensity, globalMapVisualizationPoseDensity, globalMapVisualizationPoseDensity); // for global map visualization
+        //2.20 myz
+        pcl::UniformSampling<PointType> downSizeFilterGlobalMapKeyPoses;
+        downSizeFilterGlobalMapKeyPoses.setRadiusSearch(globalMapVisualizationPoseDensity);
+
         downSizeFilterGlobalMapKeyPoses.setInputCloud(globalMapKeyPoses);
         downSizeFilterGlobalMapKeyPoses.filter(*globalMapKeyPosesDS);
         for (auto &pt : globalMapKeyPosesDS->points)
@@ -624,8 +643,11 @@ public:
             *globalMapKeyFrames += *transformPointCloud(surfCloudKeyFrames[thisKeyInd], &cloudKeyPoses6D->points[thisKeyInd]);
         }
         // downsample visualized points
-        pcl::VoxelGrid<PointType> downSizeFilterGlobalMapKeyFrames;                                                                                   // for global map visualization
-        downSizeFilterGlobalMapKeyFrames.setLeafSize(globalMapVisualizationLeafSize, globalMapVisualizationLeafSize, globalMapVisualizationLeafSize); // for global map visualization
+        //pcl::VoxelGrid<PointType> downSizeFilterGlobalMapKeyFrames;                                                                                   // for global map visualization
+        //downSizeFilterGlobalMapKeyFrames.setLeafSize(globalMapVisualizationLeafSize, globalMapVisualizationLeafSize, globalMapVisualizationLeafSize); // for global map visualization
+        pcl::UniformSampling<PointType> downSizeFilterGlobalMapKeyFrames;
+        downSizeFilterGlobalMapKeyFrames.setRadiusSearch(globalMapVisualizationLeafSize);
+
         downSizeFilterGlobalMapKeyFrames.setInputCloud(globalMapKeyFrames);
         downSizeFilterGlobalMapKeyFrames.filter(*globalMapKeyFramesDS);
         publishCloud(pubLaserCloudSurround, globalMapKeyFramesDS, timeLaserInfoStamp, odometryFrame);

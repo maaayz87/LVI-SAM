@@ -27,7 +27,9 @@ public:
     pcl::PointCloud<PointType>::Ptr cornerCloud;
     pcl::PointCloud<PointType>::Ptr surfaceCloud;
 
-    pcl::VoxelGrid<PointType> downSizeFilter;
+    //2.20 myz        
+    //pcl::VoxelGrid<PointType> downSizeFilter;
+    pcl::UniformSampling<PointType> downSizeFilter;
 
     lvi_sam::cloud_info cloudInfo;
     std_msgs::Header cloudHeader;
@@ -39,8 +41,10 @@ public:
 
     FeatureExtraction()
     {
+        //imageProjection的发布
         subLaserCloudInfo = nh.subscribe<lvi_sam::cloud_info>(PROJECT_NAME + "/lidar/deskew/cloud_info", 5, &FeatureExtraction::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
 
+        //Info=corner+surf
         pubLaserCloudInfo = nh.advertise<lvi_sam::cloud_info> (PROJECT_NAME + "/lidar/feature/cloud_info", 5);
         pubCornerPoints = nh.advertise<sensor_msgs::PointCloud2>(PROJECT_NAME + "/lidar/feature/cloud_corner", 5);
         pubSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>(PROJECT_NAME + "/lidar/feature/cloud_surface", 5);
@@ -52,7 +56,9 @@ public:
     {
         cloudSmoothness.resize(N_SCAN*Horizon_SCAN);
 
-        downSizeFilter.setLeafSize(odometrySurfLeafSize, odometrySurfLeafSize, odometrySurfLeafSize);
+        //2.20 myz
+        //downSizeFilter.setLeafSize(odometrySurfLeafSize, odometrySurfLeafSize, odometrySurfLeafSize);
+        downSizeFilter.setRadiusSearch(odometrySurfLeafSize);
 
         extractedCloud.reset(new pcl::PointCloud<PointType>());
         cornerCloud.reset(new pcl::PointCloud<PointType>());
@@ -73,7 +79,7 @@ public:
 
         markOccludedPoints();
 
-        extractFeatures();
+        extractFeatures();//提取了surface和corner点云
 
         publishFeatureCloud();
     }
@@ -229,13 +235,13 @@ public:
                 }
             }
 
-            //myz
+
             surfaceCloudScanDS->clear();
             downSizeFilter.setInputCloud(surfaceCloudScan);
             downSizeFilter.filter(*surfaceCloudScanDS);
 
             *surfaceCloud += *surfaceCloudScanDS;
-            //*surfaceCloud += *surfaceCloudScan;
+
         }
     }
 

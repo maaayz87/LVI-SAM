@@ -5,6 +5,7 @@ lvi_sam:
 
   # Topics
   pointCloudTopic: "/label_pointcloud"               # Point cloud data  points_raw
+  pointCloudTopic_RGB: "/label_pointcloud_rgb"       # rgb的语义点云
   imuTopic: "/imu/data"                         # IMU data
   odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
   gpsTopic: "odometry/gps"                   # GPS odometry topic from navsat, see module_navsat.launch file
@@ -68,9 +69,9 @@ lvi_sam:
   surfFeatureMinValidNum: 100
 
   # voxel filter paprams
-  odometrySurfLeafSize: 0.2                     # default: 0.4
-  mappingCornerLeafSize: 0.1                    # default: 0.2
-  mappingSurfLeafSize: 0.2                      # default: 0.4
+  odometrySurfLeafSize: 0.4                     # default: 0.4
+  mappingCornerLeafSize: 0.2                    # default: 0.2
+  mappingSurfLeafSize: 0.4                      # default: 0.4
 
   # robot motion constraint (in case you are using a 2D robot)
   z_tollerance: 1000        # meters

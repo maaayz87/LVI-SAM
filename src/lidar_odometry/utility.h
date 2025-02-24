@@ -30,6 +30,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/crop_box.h> 
 #include <pcl_conversions/pcl_conversions.h>
+//2.20 myz
+#include <pcl/keypoints/uniform_sampling.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -56,6 +58,7 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map>
+#include <typeinfo>
 
 using namespace std;
 
@@ -74,6 +77,8 @@ public:
     std::string robot_id;
 
     string pointCloudTopic;
+    string pointCloudTopic_RGB;
+
     string imuTopic;
     string odomTopic;
     string gpsTopic;

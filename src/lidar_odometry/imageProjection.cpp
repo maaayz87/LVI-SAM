@@ -39,6 +39,7 @@ private:
     std::mutex imuOdomLock;
 
     ros::Subscriber subLaserCloud;
+    ros::Subscriber subLaserCloud_RGB;//myz
     ros::Publisher pubLaserCloud;
 
     ros::Publisher pubExtractedCloud;
@@ -53,6 +54,8 @@ private:
     std::deque<nav_msgs::Odometry> imuOdomQueue;
 
     std::deque<sensor_msgs::PointCloud2> cloudQueue;
+    //2.24myz
+    std::deque<sensor_msgs::PointCloud2> cloudQueue_RGB;
     sensor_msgs::PointCloud2 currentCloudMsg;
 
     double *imuTime = new double[queueLength];
@@ -92,6 +95,8 @@ public:
         subVinsOdom = nh.subscribe<nav_msgs::Odometry>(PROJECT_NAME + "/vins/odometry/imu_propagate_ros", 2000, &ImageProjection::vinsOdometryHandler, this, ros::TransportHints().tcpNoDelay());
         subImuOdom = nh.subscribe<nav_msgs::Odometry>(odomTopic + "_incremental", 2000, &ImageProjection::imuOdometryHandler, this, ros::TransportHints().tcpNoDelay());
         subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic, 5, &ImageProjection::cloudHandler, this, ros::TransportHints().tcpNoDelay());
+        //2.24myz
+        subLaserCloud_RGB = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic_RGB, 5, &ImageProjection::cloudHandler_RGB, this, ros::TransportHints().tcpNoDelay());
 
         pubExtractedCloud = nh.advertise<sensor_msgs::PointCloud2>(PROJECT_NAME + "/lidar/deskew/cloud_deskewed", 5);
         pubLaserCloudInfo = nh.advertise<lvi_sam::cloud_info>(PROJECT_NAME + "/lidar/deskew/cloud_info", 5);
@@ -163,9 +168,22 @@ public:
         imuOdomQueue.push_back(*odometryMsg);
     }
 
+    //2.24myz rgb点云的回调函数
+    void cloudHandler_RGB(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg_RGB){
+
+        cloudQueue_RGB.push_back(*laserCloudMsg_RGB);
+        if (cloudQueue_RGB.size() <= 2)
+            return;
+
+        currentCloudMsg = std::move(cloudQueue_RGB.front());
+        cloudQueue_RGB.pop_front();
+        cloudInfo.cloud_RGB = currentCloudMsg;
+    }
+
+    //激光点云回调函数 最后发布到"/lidar/deskew/cloud_deskewed"
     void cloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     {
-        if (!cachePointCloud(laserCloudMsg)){
+        if (!cachePointCloud(laserCloudMsg)){ //存入laserCloudIn
             return;
         }
 
@@ -194,7 +212,7 @@ public:
         cloudQueue.pop_front();
         if (sensor == SensorType::VELODYNE || sensor == SensorType::LIVOX)
         {
-            pcl::moveFromROSMsg(currentCloudMsg, *laserCloudIn);
+            pcl::moveFromROSMsg(currentCloudMsg, *laserCloudIn);//laserCloudIn XYZIRT
         }
         else if (sensor == SensorType::OUSTER)
         {
@@ -624,6 +642,7 @@ public:
         return newPoint;
     }
 
+    //放到fullcloud里
     void projectPointCloud()
     {
         int cloudSize = laserCloudIn->points.size();
@@ -673,10 +692,11 @@ public:
             rangeMat.at<float>(rowIdn, columnIdn) = range;
 
             int index = columnIdn + rowIdn * Horizon_SCAN;
-            fullCloud->points[index] = thisPoint;
+            fullCloud->points[index] = thisPoint; // pcl::PointCloud<PointType>::Ptr
         }
     }
 
+    //存入extractedCloud
     void cloudExtraction()
     {
         int count = 0;

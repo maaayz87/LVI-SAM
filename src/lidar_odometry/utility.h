@@ -147,6 +147,7 @@ public:
     float odometrySurfLeafSize;
     float mappingCornerLeafSize;
     float mappingSurfLeafSize ;
+    float mappingRGBLeafSize;//2.25
 
     float z_tollerance; 
     float rotation_tollerance;
@@ -313,6 +314,8 @@ public:
         nh.param<float>(PROJECT_NAME + "/odometrySurfLeafSize", odometrySurfLeafSize, 0.2);
         nh.param<float>(PROJECT_NAME + "/mappingCornerLeafSize", mappingCornerLeafSize, 0.2);
         nh.param<float>(PROJECT_NAME + "/mappingSurfLeafSize", mappingSurfLeafSize, 0.2);
+        nh.param<float>(PROJECT_NAME + "/mappingRGBLeafSize", mappingRGBLeafSize, 0.2);//2.25
+        
 
         nh.param<float>(PROJECT_NAME + "/z_tollerance", z_tollerance, FLT_MAX);
         nh.param<float>(PROJECT_NAME + "/rotation_tollerance", rotation_tollerance, FLT_MAX);

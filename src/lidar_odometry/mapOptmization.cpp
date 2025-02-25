@@ -126,7 +126,11 @@ public:
 
     map<int, pair<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>>> laserCloudMapContainer;
     map<int, pcl::PointCloud<pcl::PointXYZRGB>> viCloudMapContainer;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr viCloudFromMap;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr viCloudFromMap;  
+    //2.25myz
+    map<int, pcl::PointCloud<pcl::PointXYZRGB>> laserCloudRGBMapContainer;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr laserCloudRGBFromMap;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr laserCloudRGBFromMapDS;
     pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMap;
     pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMap;
     pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMapDS;
@@ -148,6 +152,7 @@ public:
     pcl::UniformSampling<PointType> downSizeFilterSurf;
     pcl::UniformSampling<PointType> downSizeFilterICP;
     pcl::UniformSampling<PointType> downSizeFilterSurroundingKeyPoses;
+    pcl::UniformSampling<pcl::PointXYZRGB> downSizeFilterRGB;//2.25
 
     ros::Time timeLaserInfoStamp;
     double timeLaserInfoCur;
@@ -161,10 +166,15 @@ public:
     cv::Mat matP;
 
     int viCloudFromMapNum = 0;
+    int laserCloudRGBFromMapNum = 0;//2.25
+    
     int laserCloudCornerFromMapDSNum = 0;
     int laserCloudSurfFromMapDSNum = 0;
+    int laserCloudRGBFromMapDSNum = 0;//2.25
+
     int laserCloudCornerLastDSNum = 0;
     int laserCloudSurfLastDSNum = 0;
+    int laserCloudSRGBLastDSNum = 0;//2.25
 
     bool aLoopIsClosed = false;
     map<int, int> loopIndexContainer; // from new to old
@@ -220,6 +230,8 @@ public:
         downSizeFilterICP.setRadiusSearch(mappingSurfLeafSize);
         downSizeFilterSurroundingKeyPoses.setRadiusSearch(surroundingKeyframeDensity);
 
+        downSizeFilterRGB.setRadiusSearch(mappingRGBLeafSize);//2.25
+
         allocateMemory();
     }
 
@@ -258,6 +270,8 @@ public:
         std::fill(laserCloudOriSurfFlag.begin(), laserCloudOriSurfFlag.end(), false);
 
         viCloudFromMap.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+        laserCloudRGBFromMap.reset(new pcl::PointCloud<pcl::PointXYZRGB>());//2.25
+        laserCloudRGBFromMapDS.reset(new pcl::PointCloud<pcl::PointXYZRGB>());//2.25
         laserCloudCornerFromMap.reset(new pcl::PointCloud<PointType>());
         laserCloudSurfFromMap.reset(new pcl::PointCloud<PointType>());
         laserCloudCornerFromMapDS.reset(new pcl::PointCloud<PointType>());
@@ -483,56 +497,34 @@ public:
         pcl::PointCloud<PointType>::Ptr globalSurfCloud(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr globalSurfCloudDS(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr globalMapCloud(new pcl::PointCloud<PointType>());
-        //myz
-        pcl::PointCloud<PointType>::Ptr filterDynamicCloud_corner(new pcl::PointCloud<PointType>());
-        pcl::PointCloud<PointType>::Ptr filterDynamicCloud_surf(new pcl::PointCloud<PointType>());
-        std::map<float, int> intensityFrequency;
+        //2.25
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr globalRGBCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr globalRGBCloudDS(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr globalRGBMapCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr filterDynamicCloud_RGB(new pcl::PointCloud<pcl::PointXYZRGB>());
 
 
         for (int i = 0; i < (int)cloudKeyPoses3D->size(); i++)
         {
-            filterDynamicCloud_corner->clear();
-            filterDynamicCloud_surf->clear();
-            //myz 0.2-1
-            pcl::PointCloud<PointType>::Ptr tempCloud1 = cornerCloudKeyFrames[i];
-            for (size_t j = 0; j < tempCloud1->size(); ++j) {
-                auto& point = tempCloud1->points[j];
-                //point.intensity = roundIntensity(point.intensity);
-                intensityFrequency[point.intensity]++;
-                //滤除动态物体
-                //if (std::abs(point.intensity - 0.2f) > 1e-5){
-                if (point.intensity >= 0.4f){
-                    filterDynamicCloud_corner->points.push_back(point);
-                }
-            }
-            cout << "corner size: " << filterDynamicCloud_corner->points.size() << endl;
-
-            pcl::PointCloud<PointType>::Ptr tempCloud2 = surfCloudKeyFrames[i];
-            for (size_t j = 0; j < tempCloud2->size(); ++j) {
-                auto& point = tempCloud2->points[j];
-                //point.intensity = roundIntensity(point.intensity);
-                intensityFrequency[point.intensity]++;
-                //滤除动态物体
-                //if (std::abs(point.intensity - 0.2f) > 1e-5){
-                if (point.intensity >= 0.4f){
-                    filterDynamicCloud_surf->points.push_back(point);
-                }
-            }
-            cout << "surf size: " << filterDynamicCloud_surf->points.size() << endl;
-            std::cout << "\nIntensity frequency: \n";
-            for (const auto& entry : intensityFrequency) {
-                std::cout << "Intensity: " << entry.first << ", Frequency: " << entry.second << std::endl;
-            }
-
-            *globalCornerCloud += *transformPointCloud(filterDynamicCloud_corner, &cloudKeyPoses6D->points[i]);
-            *globalSurfCloud += *transformPointCloud(filterDynamicCloud_surf, &cloudKeyPoses6D->points[i]);
-
             cout << "globalCornerCloud size: " << globalCornerCloud->points.size() << endl;
             cout << "globalSurfCloud size: " << globalSurfCloud->points.size() << endl;
-            // *globalCornerCloud += *transformPointCloud(cornerCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
-            // *globalSurfCloud += *transformPointCloud(surfCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
+            *globalCornerCloud += *transformPointCloud(cornerCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
+            *globalSurfCloud += *transformPointCloud(surfCloudKeyFrames[i], &cloudKeyPoses6D->points[i]);
             cout << "\r" << std::flush << "Processing feature cloud " << i << " of " << cloudKeyPoses6D->size()<< " ...";
             
+        }
+        //2.25
+        for (int i = 0; i < (int)cloudKeyPoses3D->size(); i++){
+            filterDynamicCloud_RGB->clear();
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr tempCloud3 = RGBCloudKeyFrames[i];
+            for (size_t k = 0; k < tempCloud3->size(); ++k) {
+                auto& point = tempCloud3->points[k];
+                uint32_t dynamicRGB = (183 << 16) | (196 << 8) | 16;//{183, 196, 16}动态物
+                if (point.rgb != dynamicRGB){
+                    filterDynamicCloud_RGB->points.push_back(point);
+                }
+            }
+            *globalRGBCloud += *transformPointCloud(filterDynamicCloud_RGB, &cloudKeyPoses6D->points[i]);
         }
 
         if (req.resolution != 0)
@@ -565,12 +557,19 @@ public:
 
         cout << "saving global..." << endl;
         int ret = pcl::io::savePCDFileBinary(saveMapDirectory + "/GlobalMap.pcd", *globalMapCloud);
-        res.success = ret == 0;
+
+        //2.25
+        *globalRGBMapCloud += *globalRGBCloud;
+        cout << "\033[32msaving globalRGB...\033[0m" << endl;
+        int ret1 = pcl::io::savePCDFileBinary(saveMapDirectory + "/laserRGBMap.pcd", *globalRGBMapCloud);
+
+        res.success = ((ret == 0) || (ret1 == 0));
 
         // downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
         // downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
         downSizeFilterCorner.setRadiusSearch(mappingCornerLeafSize);
         downSizeFilterSurf.setRadiusSearch(mappingSurfLeafSize);
+        downSizeFilterRGB.setRadiusSearch(mappingRGBLeafSize);//2.25
 
 
 	    cout << "****************************************************" << endl;
@@ -1118,6 +1117,7 @@ public:
     {
         // fuse the map
         viCloudFromMap->clear();
+        laserCloudRGBFromMap->clear();//2.25
         laserCloudCornerFromMap->clear();
         laserCloudSurfFromMap->clear();
         for (int i = 0; i < (int)cloudToExtract->size(); ++i)
@@ -1137,6 +1137,12 @@ public:
                 pcl::PointCloud<pcl::PointXYZRGB> viCloudTemp = *transformPointCloud(viCloudKeyFrames[thisKeyInd], &cloudKeyPoses6D->points[thisKeyInd]);
                 *viCloudFromMap += viCloudTemp;
                 viCloudMapContainer[thisKeyInd] = viCloudTemp;
+
+                //2.25
+                pcl::PointCloud<pcl::PointXYZRGB> CloudRGBTemp = *transformPointCloud(RGBCloudKeyFrames[thisKeyInd], &cloudKeyPoses6D->points[thisKeyInd]);
+                *laserCloudRGBFromMap += CloudRGBTemp;
+                laserCloudRGBMapContainer[thisKeyInd] = CloudRGBTemp;
+
                 // transformed cloud not available
                 pcl::PointCloud<PointType> laserCloudCornerTemp = *transformPointCloud(cornerCloudKeyFrames[thisKeyInd], &cloudKeyPoses6D->points[thisKeyInd]);
                 pcl::PointCloud<PointType> laserCloudSurfTemp = *transformPointCloud(surfCloudKeyFrames[thisKeyInd], &cloudKeyPoses6D->points[thisKeyInd]);
@@ -1154,6 +1160,10 @@ public:
         downSizeFilterSurf.setInputCloud(laserCloudSurfFromMap);
         downSizeFilterSurf.filter(*laserCloudSurfFromMapDS);
         laserCloudSurfFromMapDSNum = laserCloudSurfFromMapDS->size();
+        //2.25
+        downSizeFilterRGB.setInputCloud(laserCloudRGBFromMap);
+        downSizeFilterRGB.filter(*laserCloudRGBFromMapDS);
+        laserCloudRGBFromMapDSNum = laserCloudRGBFromMapDS->size();
 
         viCloudFromMapNum = viCloudFromMap->size();
 
@@ -1161,6 +1171,7 @@ public:
         if (laserCloudMapContainer.size() > 1000)
             laserCloudMapContainer.clear();
             viCloudMapContainer.clear();
+            laserCloudRGBMapContainer.clear();//2.25
     }
 
     void extractSurroundingKeyFrames()
@@ -1190,6 +1201,11 @@ public:
         downSizeFilterSurf.setInputCloud(laserCloudSurfLast);
         downSizeFilterSurf.filter(*laserCloudSurfLastDS);
         laserCloudSurfLastDSNum = laserCloudSurfLastDS->size();
+
+        laserCloudRGBLastDS->clear();
+        downSizeFilterRGB.setInputCloud(laserCloudRGBLast);
+        downSizeFilterRGB.filter(*laserCloudRGBLastDS);
+        laserCloudSRGBLastDSNum = laserCloudRGBLastDS->size();
     }
 
     void updatePointAssociateToMap()

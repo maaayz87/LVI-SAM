@@ -54,9 +54,11 @@ private:
     std::deque<nav_msgs::Odometry> imuOdomQueue;
 
     std::deque<sensor_msgs::PointCloud2> cloudQueue;
+    sensor_msgs::PointCloud2 currentCloudMsg;
+    
     //2.24myz
     std::deque<sensor_msgs::PointCloud2> cloudQueue_RGB;
-    sensor_msgs::PointCloud2 currentCloudMsg;
+    sensor_msgs::PointCloud2 currentCloudMsg_RGB;
 
     double *imuTime = new double[queueLength];
     double *imuRotX = new double[queueLength];
@@ -175,9 +177,9 @@ public:
         if (cloudQueue_RGB.size() <= 2)
             return;
 
-        currentCloudMsg = std::move(cloudQueue_RGB.front());
+        currentCloudMsg_RGB = std::move(cloudQueue_RGB.front());
         cloudQueue_RGB.pop_front();
-        cloudInfo.cloud_RGB = currentCloudMsg;
+        cloudInfo.cloud_RGB = currentCloudMsg_RGB;
     }
 
     //激光点云回调函数 最后发布到"/lidar/deskew/cloud_deskewed"

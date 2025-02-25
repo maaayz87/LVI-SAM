@@ -39,6 +39,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg, const sensor_msgs::
 {
     //ROS_WARN("img callback");
     double cur_img_time = img_msg->header.stamp.toSec();
+    double cur_semImg_time = semantic_img_msg->header.stamp.toSec();
 
     if(first_image_flag)
     {
@@ -47,7 +48,9 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg, const sensor_msgs::
         last_image_time = cur_img_time;
         return;
     }
-    // detect unstable camera stream
+    if (std::abs(cur_img_time-  cur_semImg_time) > 1.0)
+        ROS_WARN("raw img and semantic img timestamp unalignable!");
+        // detect unstable camera stream    
     if (cur_img_time - last_image_time > 1.0 || cur_img_time < last_image_time)
     {
         ROS_WARN("image discontinue! reset the feature tracker!");

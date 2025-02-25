@@ -290,9 +290,7 @@ public:
         //关键读取 2.24myz
         pcl::fromROSMsg(msgIn->cloud_corner, *laserCloudCornerLast);
         pcl::fromROSMsg(msgIn->cloud_surface, *laserCloudSurfLast);
-        std::cout << "made a " << std::endl;
         pcl::fromROSMsg(msgIn->cloud_RGB, *laserCloudRGBLast);
-        std::cout << "wish " << std::endl;
 
         std::lock_guard<std::mutex> lock(mtx);
 
@@ -418,7 +416,7 @@ public:
         cout << "****************************************************" << endl;
         cout << "Saving vimap to pcd files, pocessing from lidar odom..." << endl;
 
-        saveMapDirectory = std::getenv("HOME") + saveViPCDDirectory;
+        saveMapDirectory = std::getenv("HOME") + savePCDDirectory;
         cout << "Save destination: " << saveMapDirectory << endl;
         // create directory and remove old files;
         int unused = system((std::string("exec rm -r ") + saveMapDirectory).c_str());
@@ -463,7 +461,7 @@ public:
     {
         string saveMapDirectory;
 
-        cout << "****************************************************" << endl;
+        cout << endl <<"****************************************************" << endl;
         cout << "Saving map to pcd files, pocessing from lidar odom..." << endl;
         if (req.destination.empty())
             saveMapDirectory = std::getenv("HOME") + savePCDDirectory;
@@ -471,10 +469,10 @@ public:
             saveMapDirectory = std::getenv("HOME") + req.destination;
         cout << "Save destination: " << saveMapDirectory << endl;
         // create directory and remove old files;
-        int unused = system((std::string("exec rm -r ") + saveMapDirectory).c_str());
-        unused = system((std::string("mkdir -p ") + saveMapDirectory).c_str());
-        int unused2 = unused;
-        unused = unused2;
+        // int unused = system((std::string("exec rm -r ") + saveMapDirectory).c_str());
+        // unused = system((std::string("mkdir -p ") + saveMapDirectory).c_str());
+        // int unused2 = unused;
+        // unused = unused2;
 
         // save key frame transformations
         pcl::io::savePCDFileBinary(saveMapDirectory + "/trajectory.pcd", *cloudKeyPoses3D);

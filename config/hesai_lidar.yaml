@@ -24,10 +24,9 @@ lvi_sam:
 
   # Export settings
   savePCD: true                              # https://github.com/TixiaoShan/LIO-SAM/issues/3
-  savePCDDirectory: "/catkin_ws_lvi2.0/src/LVI-SAM-Easyused2.0/lidar_mapsave/"        # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
+  savePCDDirectory: "/catkin_ws_lvi2.0/src/LVI-SAM-Easyused2.0/mapsave/"        # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
 
   saveViPCD: true
-  saveViPCDDirectory: "/catkin_ws_lvi2.0/src/LVI-SAM-Easyused2.0/vi_mapsave/"
 
   # Sensor Settings
   sensor: velodyne                            # lidar sensor type, 'velodyne' or 'ouster' or 'livox'

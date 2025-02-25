@@ -100,7 +100,6 @@ public:
     string savePCDDirectory;
 
     bool saveViPCD;
-    string saveViPCDDirectory;
 
     // Lidar Sensor Configuration
     SensorType sensor;
@@ -202,7 +201,7 @@ public:
         nh.param<std::string>(PROJECT_NAME + "/savePCDDirectory", savePCDDirectory, "/tmp/loam/");
 
         nh.param<bool>(PROJECT_NAME + "/saveViPCD", saveViPCD, true);
-        nh.param<std::string>(PROJECT_NAME + "/saveViPCDDirectory", saveViPCDDirectory, "/tmp/loam");
+        //nh.param<std::string>(PROJECT_NAME + "/saveViPCDDirectory", saveViPCDDirectory, "/tmp/loam");
 
         std::string sensorStr;
         nh.param<std::string>(PROJECT_NAME + "/sensor", sensorStr, "");

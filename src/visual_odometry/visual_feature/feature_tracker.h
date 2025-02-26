@@ -348,8 +348,8 @@ public:
                 vector<int> labelcount(6,0);
                 int u = feature_points_channels[1].values[i];
                 int v = feature_points_channels[2].values[i];
-                uchar pixelValue = imageSemantic.at<uchar>(v, u);//语义分割图像的像素值
-                int index = pixelValue/50;
+                uchar pixelValue = imageSemantic.at<uchar>( imageSemantic.rows-v-1, u );//语义分割图像的像素值 2.26debug
+                int index = pixelValue / 50;//index 0 1 2 3 4 5
                 labelcount[index]++;
                 for(int j = 0; j < 3; ++j)
                 {
@@ -367,22 +367,23 @@ public:
 
                 //如果三个激光点语义都不一样
                 if(features_3d_sphere->points[i].v == -1){
-                    int d = s;
-                    float labelidxf;
-                    for(int j = 0; j< 3; ++j){
-                        if(abs(depth_cloud_unit_sphere->points[pointSearchInd[j]].h - d) < d){
-                            labelidxf = depth_cloud_unit_sphere->points[pointSearchInd[j]].v;
-                            d = abs(depth_cloud_unit_sphere->points[pointSearchInd[j]].h - d);
-                        }
-                    }
+                    // int d = s;
+                    // float labelidxf;
+                    // for(int j = 0; j< 3; ++j){
+                    //     if(abs(depth_cloud_unit_sphere->points[pointSearchInd[j]].h - d) < d){
+                    //         labelidxf = depth_cloud_unit_sphere->points[pointSearchInd[j]].v;
+                    //         d = abs(depth_cloud_unit_sphere->points[pointSearchInd[j]].h - d);
+                    //     }
+                    // }
+                    
                     // uint32_t c = (255<<16) | (0<<8) | 0;
                     // features_3d_sphere->points[i].v = c;
 
                     //std::cout << i << std::endl;
-                    features_3d_sphere->points[i].v = color_map[labelidxf];
+                    //features_3d_sphere->points[i].v = color_map[labelidxf];
 
-                    //2.18myz 用纯视觉
-                    //features_3d_sphere->points[i].v = color_map[static_cast<double>(index)/5];
+                    //2.26 激光不匹配就用纯视觉
+                    features_3d_sphere->points[i].v = color_map[static_cast<double>(index)/5];
                 }
 
                 // convert feature into cartesian space if depth is available
